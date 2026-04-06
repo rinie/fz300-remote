@@ -361,10 +361,22 @@ function log(msg, type = '') {
   el.scrollTop = el.scrollHeight;
 }
 
+function cameraError(response) {
+  // Camera returns XML like <result>err_unsuitable_app</result> on failure
+  const m = response && response.match(/<result>(err_[^<]+)<\/result>/);
+  return m ? m[1] : null;
+}
+
 function handleResult(res, label) {
   if (res.ok) {
-    log(`${label}: ${res.response?.slice(0, 80) ?? ''}`, 'ok');
-    document.getElementById('status-dot').className = 'connected';
+    const camErr = cameraError(res.response);
+    if (camErr) {
+      log(`${label}: ${camErr}`, 'err');
+      document.getElementById('status-dot').className = 'error';
+    } else {
+      log(`${label}: ${res.response?.slice(0, 80) ?? ''}`, 'ok');
+      document.getElementById('status-dot').className = 'connected';
+    }
   } else {
     log(`${label} FAILED: ${res.error}`, 'err');
     document.getElementById('status-dot').className = 'error';
@@ -374,6 +386,10 @@ function handleResult(res, label) {
 async function connect() {
   const res = await api('GET', '/api/connect');
   handleResult(res, 'Connect');
+  if (res.ok && !cameraError(res.response)) {
+    const modeRes = await api('POST', '/api/mode/rec');
+    handleResult(modeRes, 'Mode: rec');
+  }
 }
 
 async function getState() {
