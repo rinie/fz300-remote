@@ -1,0 +1,15 @@
+{
+  "name": "fz300-remote",
+  "version": "1.0.0",
+  "description": "WiFi remote control app for the Panasonic Lumix FZ300",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["panasonic", "lumix", "fz300", "remote", "camera"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
