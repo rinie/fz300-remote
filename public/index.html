@@ -383,12 +383,31 @@ function handleResult(res, label) {
   }
 }
 
+let heartbeatTimer = null;
+
+function startHeartbeat() {
+  stopHeartbeat();
+  heartbeatTimer = setInterval(async () => {
+    const res = await api('GET', '/api/state');
+    if (!res.ok || cameraError(res.response)) {
+      log('Heartbeat lost — reconnect', 'err');
+      document.getElementById('status-dot').className = 'error';
+      stopHeartbeat();
+    }
+  }, 60000);
+}
+
+function stopHeartbeat() {
+  if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+}
+
 async function connect() {
   const res = await api('GET', '/api/connect');
   handleResult(res, 'Connect');
   if (res.ok && !cameraError(res.response)) {
     const modeRes = await api('POST', '/api/mode/rec');
     handleResult(modeRes, 'Mode: rec');
+    startHeartbeat();
   }
 }
 
