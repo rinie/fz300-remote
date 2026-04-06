@@ -41,13 +41,44 @@ Open `http://localhost:3000` in your browser.
 2. Click **Record mode** to enter live-view/shooting mode
 3. Use the Capture, Zoom, Focus controls as needed
 
-## File structure
+## Program structure
 
 ```
 server.js          Express server + REST API routes
-cameraCommands.js  All camera URL command definitions (edit this to add/change commands)
-public/index.html  Web UI
+cameraCommands.js  All camera URL command definitions
+public/index.html  Single-page web UI (HTML + CSS + JS, no build step)
 ```
+
+### How the pieces fit together
+
+```
+Browser (index.html)
+    │  fetch() calls to /api/*
+    ▼
+server.js  (Express, localhost:3000)
+    │  http.get() proxies to camera
+    ▼
+Camera HTTP API  (192.168.54.1/cam.cgi)
+```
+
+**`cameraCommands.js`** contains only URL builders — pure functions that take an IP (and optional parameters) and return a fully-formed `cam.cgi` URL. No HTTP logic lives here, making it easy to add or adjust commands without touching the server.
+
+**`server.js`** maps each REST route to a camera URL via `sendCommand()`, which calls `camGet()` with a 5-second timeout. All camera errors and timeouts are caught and returned as `{ ok: false, error: ... }` JSON so the UI can display them.
+
+**`public/index.html`** is a self-contained single-page app. `handleResult()` parses the camera's XML response body and distinguishes between HTTP-level failures, camera-level errors (`err_*` codes), and genuine success — showing each in a different colour in the log.
+
+### UI sections
+
+| Section | Description |
+|---------|-------------|
+| Session | Connect (authenticates + auto-switches to record mode) and Get State |
+| Mode | Explicitly switch between Record and Playback mode |
+| Capture | Shutter button, hold-to-focus (AF), and photo capture |
+| Video | Start/stop video recording with a blinking recording indicator |
+| Zoom | D-pad hold buttons for slow/fast tele and wide zoom |
+| Manual Focus | D-pad hold buttons for slow/fast far and near focus |
+| Settings | Get/set ISO, shutter speed, white balance, AF mode, quality, exposure comp |
+| Log | Timestamped command log — green = success, red = error |
 
 ## API endpoints
 
